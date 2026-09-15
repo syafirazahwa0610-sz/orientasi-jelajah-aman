@@ -9,4 +9,4 @@ export interface WeatherCardProps {
   kota: string;
   suhu: number;
   tingkatAQI: TingkatAQI;
-
+}
