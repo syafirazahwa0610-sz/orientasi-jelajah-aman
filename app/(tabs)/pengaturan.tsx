@@ -1,10 +1,10 @@
-// app/(tabs)/pengaturan.tsx
-import { View, Text } from "react-native";
+// app/(tabs)/pengaturan.tsx (ganti <View> terluar menjadi <SafeAreaView>)
+import { SafeAreaView } from "react-native-safe-area-context";
+import PengaturanList from "../../components/PengaturanList";
 export default function TabPengaturan() {
-return (
-<View style={{ padding: 16 }}>
-<Text style={{ fontSize: 18, fontWeight: "bold" }}>Jelajah Aman</Text>
-<Text>Versi 1.0.0</Text>
-</View>
-);
+  return (
+    <SafeAreaView style={{ flex: 1, padding: 16 }}>
+      <PengaturanList />
+    </SafeAreaView>
+  );
 }
