@@ -3,9 +3,9 @@ import { View, Text, StyleSheet } from "react-native";
 import { typeScale, spacing } from "../../constants/styles";
 
 // Ganti nilai-nilai berikut sesuai identitas aplikasi Anda
-const APP_NAME = "Nama Aplikasi";
+const APP_NAME = "Cek Cuaca";
 const APP_VERSION = "1.0.0";
-const APP_AUTHOR = "Nama Pembuat";
+const APP_AUTHOR = "Syafira";
 
 export default function TentangScreen() {
   return (
