@@ -57,7 +57,7 @@ ambilKualitasUdara(kota.latitude, kota.longitude),
 if (idSaatIni !== requestIdRef.current) return; // hasil basi, abaikan
 setCuaca(dataCuaca);
 setKualitasUdara(dataAQI);
-} catch (err) {
+} catch {
 if (idSaatIni !== requestIdRef.current) return;
 setPesanError("Gagal memuat data cuaca. Periksa koneksi internet Anda.");
 } finally {
