@@ -1,3 +1,63 @@
+// import { useState, useEffect } from "react";
+// import { View, Text, ActivityIndicator, Button } from "react-native";
+// import { SafeAreaView } from "react-native-safe-area-context";
+// import SearchBox from "../../components/SearchBox";
+// import WeatherCard from "../../components/WeatherCard";
+// import { useDebounce } from "../../hooks/use-debounce";
+// import { cariKota } from "../../services/geocodingService";
+// import { HasilGeocoding } from "../../types/geocoding";
+// export default function HalamanUtama() {
+//     const [teksCari, setTeksCari] = useState("");
+//     const [hasil, setHasil] = useState<HasilGeocoding[]>([]);
+//     const [sedangMemuat, setSedangMemuat] = useState(false);
+//     const [pesanError, setPesanError] = useState<string | null>(null);
+
+//     const teksTertunda = useDebounce(teksCari, 500);
+//     useEffect(() => {
+//         if (teksTertunda.trim().length === 0) {
+//             setHasil([]);
+//             setPesanError(null);
+//             return;
+//         }
+//         ambilData(teksTertunda);
+//     }, [teksTertunda]);
+
+//     async function ambilData(nama: string) {
+//         setSedangMemuat(true);
+//         setPesanError(null);
+//         try {
+//         const data = await cariKota(nama);
+//         setHasil(data);
+//         } catch (err) {
+//         setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
+//         } finally {
+//         setSedangMemuat(false);
+//         }
+//     }
+
+//     return (
+//         <SafeAreaView style={{ flex: 1, padding: 16, gap: 16 }}>
+//             <SearchBox onCari={setTeksCari} />
+
+//             {sedangMemuat && <ActivityIndicator />}
+
+//             {pesanError && (
+//             <View>
+//                 <Text>{pesanError}</Text>
+//                 <Button title="Coba Lagi" onPress={() => ambilData(teksTertunda)} />
+//             </View>
+//         )}
+//         {!sedangMemuat && !pesanError && teksTertunda.length > 0 && hasil.length === 0
+//     && (
+//         <Text>Kota tidak ditemukan</Text>
+//     )}
+//     {hasil.map((kota) => (
+//     <WeatherCard key={kota.id} kota={kota.name} suhu={29} tingkatAQI="BAIK" />
+//     ))}
+//     </SafeAreaView>
+// );
+// }
+
 import { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,6 +66,7 @@ import WeatherCard from "../../components/WeatherCard";
 import { useDebounce } from "../../hooks/use-debounce";
 import { cariKota } from "../../services/geocodingService";
 import { HasilGeocoding } from "../../types/geocoding";
+
 export default function HalamanUtama() {
     const [teksCari, setTeksCari] = useState("");
     const [hasil, setHasil] = useState<HasilGeocoding[]>([]);
@@ -13,25 +74,29 @@ export default function HalamanUtama() {
     const [pesanError, setPesanError] = useState<string | null>(null);
 
     const teksTertunda = useDebounce(teksCari, 500);
+
     useEffect(() => {
         if (teksTertunda.trim().length === 0) {
-            setHasil([]);
-            setPesanError(null);
             return;
         }
         ambilData(teksTertunda);
     }, [teksTertunda]);
 
+    // Turunan dari state, dihitung saat render
+    const inputKosong = teksTertunda.trim().length === 0;
+    const hasilTampil = inputKosong ? [] : hasil;
+    const errorTampil = inputKosong ? null : pesanError;
+
     async function ambilData(nama: string) {
         setSedangMemuat(true);
         setPesanError(null);
         try {
-        const data = await cariKota(nama);
-        setHasil(data);
+            const data = await cariKota(nama);
+            setHasil(data);
         } catch (err) {
-        setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
+            setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
         } finally {
-        setSedangMemuat(false);
+            setSedangMemuat(false);
         }
     }
 
@@ -41,19 +106,20 @@ export default function HalamanUtama() {
 
             {sedangMemuat && <ActivityIndicator />}
 
-            {pesanError && (
-            <View>
-                <Text>{pesanError}</Text>
-                <Button title="Coba Lagi" onPress={() => ambilData(teksTertunda)} />
-            </View>
-        )}
-        {!sedangMemuat && !pesanError && teksTertunda.length > 0 && hasil.length === 0
-    && (
-        <Text>Kota tidak ditemukan</Text>
-    )}
-    {hasil.map((kota) => (
-    <WeatherCard key={kota.id} kota={kota.name} suhu={29} tingkatAQI="BAIK" />
-    ))}
-    </SafeAreaView>
-);
+            {errorTampil && (
+                <View>
+                    <Text>{errorTampil}</Text>
+                    <Button title="Coba Lagi" onPress={() => ambilData(teksTertunda)} />
+                </View>
+            )}
+
+            {!sedangMemuat && !errorTampil && !inputKosong && hasilTampil.length === 0 && (
+                <Text>Kota tidak ditemukan</Text>
+            )}
+
+            {hasilTampil.map((kota) => (
+                <WeatherCard key={kota.id} kota={kota.name} suhu={29} tingkatAQI="BAIK" />
+            ))}
+        </SafeAreaView>
+    );
 }
