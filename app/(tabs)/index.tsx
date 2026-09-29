@@ -110,13 +110,24 @@ export default function HalamanUtama() {
 
             {errorTampil && (
                 <View>
-                    <Text>{errorTampil}</Text>
-                    <Button title="Coba Lagi" onPress={() => ambilData(teksTertunda)} />
+                    <Text
+                        accessibilityRole="alert"
+                        accessibilityLabel={`Pesan kesalahan: ${errorTampil}`}
+                    >
+                        {errorTampil}
+                    </Text>
+                    <Button
+                        title="Coba Lagi"
+                        accessibilityLabel="Coba mengambil data lagi"
+                        onPress={() => ambilData(teksTertunda)}
+                    />
                 </View>
             )}
 
-            {!sedangMemuat && !errorTampil && !inputKosong && hasilTampil.length === 0 && (
-                <Text>Kota tidak ditemukan</Text>
+           {!sedangMemuat && !errorTampil && !inputKosong && hasilTampil.length === 0 && (
+                <Text accessibilityLabel="Kota yang dicari tidak ditemukan">
+                    Kota tidak ditemukan
+                </Text>
             )}
 
             {!sedangMemuat && hasilTampil.length > 0 && (
