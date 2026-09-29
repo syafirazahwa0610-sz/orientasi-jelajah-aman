@@ -73,7 +73,8 @@ export default function HalamanUtama() {
     const [sedangMemuat, setSedangMemuat] = useState(false);
     const [pesanError, setPesanError] = useState<string | null>(null);
 
-    const teksTertunda = useDebounce(teksCari, 500);
+    const teksTertunda = useDebounce(teksCari, 800);
+    console.log("teksCari:", teksCari, "| teksTertunda:", teksTertunda);
 
     useEffect(() => {
         if (teksTertunda.trim().length === 0) {
@@ -116,6 +117,10 @@ export default function HalamanUtama() {
 
             {!sedangMemuat && !errorTampil && !inputKosong && hasilTampil.length === 0 && (
                 <Text>Kota tidak ditemukan</Text>
+            )}
+
+            {!sedangMemuat && hasilTampil.length > 0 && (
+                <Text>Ditemukan {hasilTampil.length} kota</Text>
             )}
 
             {hasilTampil.map((kota) => (
