@@ -1,142 +1,102 @@
-// import { useState, useEffect } from "react";
-// import { View, Text, ActivityIndicator, Button } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
-// import SearchBox from "../../components/SearchBox";
-// import WeatherCard from "../../components/WeatherCard";
-// import { useDebounce } from "../../hooks/use-debounce";
-// import { cariKota } from "../../services/geocodingService";
-// import { HasilGeocoding } from "../../types/geocoding";
-// export default function HalamanUtama() {
-//     const [teksCari, setTeksCari] = useState("");
-//     const [hasil, setHasil] = useState<HasilGeocoding[]>([]);
-//     const [sedangMemuat, setSedangMemuat] = useState(false);
-//     const [pesanError, setPesanError] = useState<string | null>(null);
-
-//     const teksTertunda = useDebounce(teksCari, 500);
-//     useEffect(() => {
-//         if (teksTertunda.trim().length === 0) {
-//             setHasil([]);
-//             setPesanError(null);
-//             return;
-//         }
-//         ambilData(teksTertunda);
-//     }, [teksTertunda]);
-
-//     async function ambilData(nama: string) {
-//         setSedangMemuat(true);
-//         setPesanError(null);
-//         try {
-//         const data = await cariKota(nama);
-//         setHasil(data);
-//         } catch (err) {
-//         setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
-//         } finally {
-//         setSedangMemuat(false);
-//         }
-//     }
-
-//     return (
-//         <SafeAreaView style={{ flex: 1, padding: 16, gap: 16 }}>
-//             <SearchBox onCari={setTeksCari} />
-
-//             {sedangMemuat && <ActivityIndicator />}
-
-//             {pesanError && (
-//             <View>
-//                 <Text>{pesanError}</Text>
-//                 <Button title="Coba Lagi" onPress={() => ambilData(teksTertunda)} />
-//             </View>
-//         )}
-//         {!sedangMemuat && !pesanError && teksTertunda.length > 0 && hasil.length === 0
-//     && (
-//         <Text>Kota tidak ditemukan</Text>
-//     )}
-//     {hasil.map((kota) => (
-//     <WeatherCard key={kota.id} kota={kota.name} suhu={29} tingkatAQI="BAIK" />
-//     ))}
-//     </SafeAreaView>
-// );
-// }
-
-import { useState, useEffect } from "react";
-import { View, Text, ActivityIndicator, Button } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, ActivityIndicator, Button, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SearchBox from "../../components/SearchBox";
 import WeatherCard from "../../components/WeatherCard";
+import AtribusiCuaca from "../../components/AtribusiCuaca";
 import { useDebounce } from "../../hooks/use-debounce";
 import { cariKota } from "../../services/geocodingService";
+import { ambilCuaca } from "../../services/weatherService";
+import { ambilKualitasUdara } from "../../services/airQualityService";
+import { konversiTingkatAQI } from "../../services/weatherAdapter";
+import { labelKodeCuaca } from "../../constants/weatherCodes";
 import { HasilGeocoding } from "../../types/geocoding";
-
+import { DataCuacaLengkap, DataKualitasUdara } from "../../types/weather";
 export default function HalamanUtama() {
-    const [teksCari, setTeksCari] = useState("");
-    const [hasil, setHasil] = useState<HasilGeocoding[]>([]);
-    const [sedangMemuat, setSedangMemuat] = useState(false);
-    const [pesanError, setPesanError] = useState<string | null>(null);
-
-    const teksTertunda = useDebounce(teksCari, 800);
-    console.log("teksCari:", teksCari, "| teksTertunda:", teksTertunda);
-
-    useEffect(() => {
-        if (teksTertunda.trim().length === 0) {
-            return;
-        }
-        ambilData(teksTertunda);
-    }, [teksTertunda]);
-
-    // Turunan dari state, dihitung saat render
-    const inputKosong = teksTertunda.trim().length === 0;
-    const hasilTampil = inputKosong ? [] : hasil;
-    const errorTampil = inputKosong ? null : pesanError;
-
-    async function ambilData(nama: string) {
-        setSedangMemuat(true);
-        setPesanError(null);
-        try {
-            const data = await cariKota(nama);
-            setHasil(data);
-        } catch (err) {
-             console.log("ERROR ambilData:", err);   // <-- tambahkan ini
-         setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
-        } finally {
-            setSedangMemuat(false);
-        }
+const [teksCari, setTeksCari] = useState("");
+const [hasilPencarian, setHasilPencarian] = useState<HasilGeocoding[]>([]);
+const [kotaTerpilih, setKotaTerpilih] = useState<HasilGeocoding | null>(null);
+const [cuaca, setCuaca] = useState<DataCuacaLengkap | null>(null);
+const [kualitasUdara, setKualitasUdara] = useState<DataKualitasUdara | null>(null);
+const [sedangMemuat, setSedangMemuat] = useState(false);
+const [pesanError, setPesanError] = useState<string | null>(null);
+const teksTertunda = useDebounce(teksCari, 500);
+const requestIdRef = useRef(0); // pencegah race condition
+useEffect(() => {
+    if (teksTertunda.trim().length === 0) {
+        return; // tidak ada setState langsung di badan efek
     }
 
-    return (
-        <SafeAreaView style={{ flex: 1, padding: 16, gap: 16 }}>
-            <SearchBox onCari={setTeksCari} />
+    let dibatalkan = false;
+    cariKota(teksTertunda)
+        .then((data) => {
+            if (!dibatalkan) setHasilPencarian(data);
+        })
+        .catch(() => {
+            if (!dibatalkan) setHasilPencarian([]);
+        });
 
-            {sedangMemuat && <ActivityIndicator />}
+    return () => {
+        dibatalkan = true; // abaikan respons lama kalau teks sudah berubah
+    };
+}, [teksTertunda]);
 
-            {errorTampil && (
-                <View>
-                    <Text
-                        accessibilityRole="alert"
-                        accessibilityLabel={`Pesan kesalahan: ${errorTampil}`}
-                    >
-                        {errorTampil}
-                    </Text>
-                    <Button
-                        title="Coba Lagi"
-                        accessibilityLabel="Coba mengambil data lagi"
-                        onPress={() => ambilData(teksTertunda)}
-                    />
-                </View>
-            )}
-
-           {!sedangMemuat && !errorTampil && !inputKosong && hasilTampil.length === 0 && (
-                <Text accessibilityLabel="Kota yang dicari tidak ditemukan">
-                    Kota tidak ditemukan
-                </Text>
-            )}
-
-            {!sedangMemuat && hasilTampil.length > 0 && (
-                <Text>Ditemukan {hasilTampil.length} kota</Text>
-            )}
-
-            {hasilTampil.map((kota) => (
-                <WeatherCard key={kota.id} kota={kota.name} suhu={29} tingkatAQI="BAIK" />
-            ))}
-        </SafeAreaView>
-    );
+// Turunan dari state, dihitung saat render
+const inputKosong = teksTertunda.trim().length === 0;
+const hasilTampil = inputKosong ? [] : hasilPencarian;
+async function pilihKota(kota: HasilGeocoding) {
+setKotaTerpilih(kota);
+const idSaatIni = ++requestIdRef.current;
+setSedangMemuat(true);
+setPesanError(null);
+try {
+const [dataCuaca, dataAQI] = await Promise.all([
+ambilCuaca(kota.latitude, kota.longitude),
+ambilKualitasUdara(kota.latitude, kota.longitude),
+]);
+if (idSaatIni !== requestIdRef.current) return; // hasil basi, abaikan
+setCuaca(dataCuaca);
+setKualitasUdara(dataAQI);
+} catch (err) {
+if (idSaatIni !== requestIdRef.current) return;
+setPesanError("Gagal memuat data cuaca. Periksa koneksi internet Anda.");
+} finally {
+if (idSaatIni === requestIdRef.current) setSedangMemuat(false);
+}
+}
+return (
+<SafeAreaView style={{ flex: 1, padding: 16, gap: 16 }}>
+<SearchBox onCari={setTeksCari} />
+{hasilTampil.map((kota) => (
+<TouchableOpacity key={kota.id} onPress={() => pilihKota(kota)}>
+<Text>{kota.name}</Text>
+</TouchableOpacity>
+))}
+{sedangMemuat && <ActivityIndicator />}
+{pesanError && (
+<View>
+<Text>{pesanError}</Text>
+<Button
+title="Coba Lagi"
+onPress={() => kotaTerpilih && pilihKota(kotaTerpilih)}
+/>
+</View>
+)}
+{cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
+<WeatherCard
+kota={kotaTerpilih.name}
+suhu={cuaca.saatIni.suhu}
+tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
+indeksAQI={kualitasUdara.indeksAQI}
+/>
+)}
+{cuaca && (
+<Text style={{ fontSize: 12, color: "#888" }}>
+    Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} • Angin{" "}
+    {cuaca.saatIni.kecepatanAngin} km/j
+</Text>
+)}
+<AtribusiCuaca />
+</SafeAreaView>
+);
 }
