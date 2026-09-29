@@ -4,6 +4,7 @@ export async function cariKota(nama: string): Promise<HasilGeocoding[]> {
 const url =
 `${BASE_URL}?name=${encodeURIComponent(nama)}&count=5&language=id&format=jso
 n`;
+console.log("URL:", url);
 const response = await fetch(url);
 if (!response.ok) {
 throw new Error(`Gagal memuat data (status ${response.status})`);
