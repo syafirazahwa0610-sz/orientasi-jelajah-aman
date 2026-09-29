@@ -94,7 +94,8 @@ export default function HalamanUtama() {
             const data = await cariKota(nama);
             setHasil(data);
         } catch (err) {
-            setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
+             console.log("ERROR ambilData:", err);   // <-- tambahkan ini
+         setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
         } finally {
             setSedangMemuat(false);
         }
