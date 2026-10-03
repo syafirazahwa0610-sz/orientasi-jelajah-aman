@@ -1,7 +1,7 @@
 import { DataKualitasUdara } from "../types/weather";
 
 const BASE_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
-const BATAS_WAKTU_MS = 10000; // 10 detik
+const BATAS_WAKTU_MS = 3000; // 10 detik
 
 export async function ambilKualitasUdara(
   latitude: number,

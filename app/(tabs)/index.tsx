@@ -136,6 +136,15 @@ export default function HalamanUtama() {
                 </Text>
             )}
 
+            {kualitasUdara && (kualitasUdara.pm25 != null || kualitasUdara.pm10 != null) && (
+                <Text
+                    style={{ fontSize: 12, color: "#888" }}
+                    accessibilityLabel={`Partikel halus PM 2,5: ${kualitasUdara.pm25 != null ? Math.round(kualitasUdara.pm25) : "tidak tersedia"} mikrogram per meter kubik. PM 10: ${kualitasUdara.pm10 != null ? Math.round(kualitasUdara.pm10) : "tidak tersedia"} mikrogram per meter kubik`}
+                >
+                    PM2.5: {kualitasUdara.pm25 != null ? Math.round(kualitasUdara.pm25) : "-"} µg/m³ • PM10:{" "}
+                    {kualitasUdara.pm10 != null ? Math.round(kualitasUdara.pm10) : "-"} µg/m³
+                </Text>
+            )}
             <AtribusiCuaca />
         </SafeAreaView>
     );
