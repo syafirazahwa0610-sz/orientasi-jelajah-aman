@@ -49,6 +49,9 @@ export default function HalamanUtama() {
     const inputKosong = teksTertunda.trim().length === 0;
     const hasilTampil = inputKosong ? [] : hasilPencarian;
 
+    const suhuMaks = cuaca?.harian?.suhuMaksimal?.[0];
+    const suhuMin = cuaca?.harian?.suhuMinimal?.[0];
+
     async function pilihKota(kota: HasilGeocoding) {
         setKotaTerpilih(kota);
         const idSaatIni = ++requestIdRef.current;
@@ -109,12 +112,21 @@ export default function HalamanUtama() {
             )}
 
             {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
-                <WeatherCard
-                    kota={kotaTerpilih.name}
-                    suhu={cuaca.saatIni.suhu}
-                    tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
-                    indeksAQI={kualitasUdara.indeksAQI}
-                />
+                <>
+                    <WeatherCard
+                        kota={kotaTerpilih.name}
+                        suhu={cuaca.saatIni.suhu}
+                        tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
+                        indeksAQI={kualitasUdara.indeksAQI}
+                    />
+                    {suhuMaks != null && suhuMin != null && (
+                        <Text
+                            accessibilityLabel={`Suhu hari ini, maksimal ${Math.round(suhuMaks)} derajat Celsius, minimal ${Math.round(suhuMin)} derajat Celsius`}
+                        >
+                            Maks {Math.round(suhuMaks)}°C • Min {Math.round(suhuMin)}°C
+                        </Text>
+                    )}
+                </>
             )}
 
             {cuaca && (
