@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -23,21 +24,16 @@ import { ambilCuaca } from "../../services/weatherService";
 import { HasilGeocoding } from "../../types/geocoding";
 import { DataCuacaLengkap, DataKualitasUdara } from "../../types/weather";
 
-type LokasiTerpilih = { nama: string; latitude: number; longitude: number };
-
 export default function HalamanUtama() {
   const [teksCari, setTeksCari] = useState("");
   const [hasilPencarian, setHasilPencarian] = useState<HasilGeocoding[]>([]);
-  const [lokasiTerpilih, setLokasiTerpilih] = useState<LokasiTerpilih | null>(
-    null,
-  );
+  const [kotaTerpilih, setKotaTerpilih] = useState<HasilGeocoding | null>(null);
   const [cuaca, setCuaca] = useState<DataCuacaLengkap | null>(null);
   const [kualitasUdara, setKualitasUdara] = useState<DataKualitasUdara | null>(
     null,
   );
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
-
   const [pesanLokasi, setPesanLokasi] = useState<string | null>(null);
 
   const teksTertunda = useDebounce(teksCari, 500);
@@ -70,89 +66,27 @@ export default function HalamanUtama() {
   const suhuMaks = cuaca?.harian?.suhuMaksimal?.[0];
   const suhuMin = cuaca?.harian?.suhuMinimal?.[0];
 
-  // Memuat cuaca + kualitas udara untuk lokasi mana pun (kota atau GPS)
-  async function muatCuaca(lokasi: LokasiTerpilih) {
-    setLokasiTerpilih(lokasi);
+  async function pilihKota(kota: HasilGeocoding) {
+    setKotaTerpilih(kota);
     const idSaatIni = ++requestIdRef.current;
     setSedangMemuat(true);
     setPesanError(null);
     try {
       const [dataCuaca, dataAQI] = await Promise.all([
-        ambilCuaca(lokasi.latitude, lokasi.longitude),
-        ambilKualitasUdara(lokasi.latitude, lokasi.longitude),
+        ambilCuaca(kota.latitude, kota.longitude),
+        ambilKualitasUdara(kota.latitude, kota.longitude),
       ]);
       if (idSaatIni !== requestIdRef.current) return; // hasil basi, abaikan
       setCuaca(dataCuaca);
       setKualitasUdara(dataAQI);
     } catch (err) {
       if (idSaatIni !== requestIdRef.current) return;
-      console.log("ERROR muatCuaca:", err); // hapus setelah selesai debugging
+      console.log("ERROR pilihKota:", err); // hapus setelah selesai debugging
       setPesanError("Gagal memuat data cuaca. Periksa koneksi internet Anda.");
     } finally {
       if (idSaatIni === requestIdRef.current) setSedangMemuat(false);
     }
   }
-
-  function pilihKota(kota: HasilGeocoding) {
-    return muatCuaca({
-      nama: kota.name,
-      latitude: kota.latitude,
-      longitude: kota.longitude,
-    });
-  }
-
-  async function gunakanLokasiSaya() {
-    setPesanError(null);
-    try {
-      const status = await mintaIzinLokasi();
-
-      if (status === "unavailable") {
-        setPesanError(
-          "Layanan lokasi (GPS) mati. Aktifkan GPS lalu coba lagi.",
-        );
-        return;
-      }
-      if (status === "denied") {
-        setPesanError(
-          "Izin lokasi ditolak. Aktifkan izin lokasi di pengaturan perangkat.",
-        );
-        return;
-      }
-
-      setSedangMemuat(true);
-      const { latitude, longitude } = await ambilKoordinatSaatIni();
-      await muatCuaca({ nama: "Lokasi Saya", latitude, longitude });
-    } catch (err) {
-      console.log("ERROR gunakanLokasiSaya:", err); // hapus setelah selesai debugging
-      setSedangMemuat(false);
-      setPesanError("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
-    }
-  }
-
-  //   async function gunakanLokasiSaatIni() {
-  //     const status = await mintaIzinLokasi();
-  //     if (status === "denied") {
-  //       setPesanLokasi(
-  //         "Izin lokasi ditolak. Silakan cari kota secara manual di atas.",
-  //       );
-  //       return;
-  //     }
-  //     if (status === "unavailable") {
-  //       setPesanLokasi(
-  //         "Layanan lokasi tidak aktif di perangkat ini. Silakan cari kota secara manual.",
-  //       );
-  //       return;
-  //     }
-  //     setPesanLokasi(null);
-  //     const koordinat = await ambilKoordinatSaatIni();
-  //     pilihKota({
-  //       id: -1,
-  //       name: "Lokasi Saat Ini",
-  //       latitude: koordinat.latitude,
-  //       longitude: koordinat.longitude,
-  //       country: "",
-  //     });
-  //   }
 
   async function gunakanLokasiSaatIni() {
     setPesanLokasi(null);
@@ -171,13 +105,15 @@ export default function HalamanUtama() {
         return;
       }
       const koordinat = await ambilKoordinatSaatIni();
-      await muatCuaca({
-        nama: "Lokasi Saat Ini",
+      await pilihKota({
+        id: -1,
+        name: "Lokasi Saat Ini",
         latitude: koordinat.latitude,
         longitude: koordinat.longitude,
+        country: "",
       });
     } catch (err) {
-      console.log("ERROR gunakanLokasiSaatIni:", err);
+      console.log("ERROR gunakanLokasiSaatIni:", err); // hapus setelah selesai debugging
       setPesanLokasi("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
     }
   }
@@ -188,12 +124,6 @@ export default function HalamanUtama() {
 
       <Button title="Gunakan Lokasi Saat Ini" onPress={gunakanLokasiSaatIni} />
       {pesanLokasi && <Text>{pesanLokasi}</Text>}
-
-      <Button
-        title="Gunakan lokasi saya"
-        accessibilityLabel="Gunakan lokasi saya untuk menampilkan cuaca"
-        onPress={gunakanLokasiSaya}
-      />
 
       {hasilTampil.length > 0 && (
         <Text accessibilityLabel={`Ditemukan ${hasilTampil.length} kota`}>
@@ -223,18 +153,32 @@ export default function HalamanUtama() {
           <Button
             title="Coba Lagi"
             accessibilityLabel="Coba memuat data cuaca lagi"
-            onPress={() => lokasiTerpilih && muatCuaca(lokasiTerpilih)}
+            onPress={() => kotaTerpilih && pilihKota(kotaTerpilih)}
           />
         </View>
       )}
 
-      {cuaca && kualitasUdara && lokasiTerpilih && !sedangMemuat && (
+      {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
         <>
           <WeatherCard
-            kota={lokasiTerpilih.nama}
+            kota={kotaTerpilih.name}
             suhu={cuaca.saatIni.suhu}
             tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
             indeksAQI={kualitasUdara.indeksAQI}
+          />
+          <Button
+            title="Tambahkan ke Favorit"
+            onPress={() =>
+              router.push({
+                pathname: "/tambah-favorit",
+                params: {
+                  id: String(kotaTerpilih.id),
+                  nama: kotaTerpilih.name,
+                  lat: String(kotaTerpilih.latitude),
+                  lon: String(kotaTerpilih.longitude),
+                },
+              })
+            }
           />
           {suhuMaks != null && suhuMin != null && (
             <Text
