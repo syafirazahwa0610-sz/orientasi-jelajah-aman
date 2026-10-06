@@ -1,11 +1,11 @@
-import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Button,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Button,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AtribusiCuaca from "../../components/AtribusiCuaca";
@@ -14,10 +14,11 @@ import WeatherCard from "../../components/WeatherCard";
 import { labelKodeCuaca } from "../../constants/weatherCodes";
 import { useDebounce } from "../../hooks/use-debounce";
 import { ambilKualitasUdara } from "../../services/airQualityService";
+import { ambilSemuaFavorit } from "../../services/favoritStorage";
 import { cariKota } from "../../services/geocodingService";
 import {
-    ambilKoordinatSaatIni,
-    mintaIzinLokasi,
+  ambilKoordinatSaatIni,
+  mintaIzinLokasi,
 } from "../../services/locationService";
 import { konversiTingkatAQI } from "../../services/weatherAdapter";
 import { ambilCuaca } from "../../services/weatherService";
@@ -35,9 +36,19 @@ export default function HalamanUtama() {
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
   const [pesanLokasi, setPesanLokasi] = useState<string | null>(null);
+  const [idFavorit, setIdFavorit] = useState<number[]>([]);
 
   const teksTertunda = useDebounce(teksCari, 500);
   const requestIdRef = useRef(0); // pencegah race condition
+
+  // Muat daftar id favorit setiap Beranda tampil (termasuk saat kembali dari halaman tambah favorit)
+  useFocusEffect(
+    useCallback(() => {
+      ambilSemuaFavorit()
+        .then((daftar) => setIdFavorit(daftar.map((k) => k.id)))
+        .catch((err) => console.log("ERROR muat favorit:", err));
+    }, []),
+  );
 
   // Pencarian kota (dengan debounce)
   useEffect(() => {
@@ -65,6 +76,10 @@ export default function HalamanUtama() {
 
   const suhuMaks = cuaca?.harian?.suhuMaksimal?.[0];
   const suhuMin = cuaca?.harian?.suhuMinimal?.[0];
+
+  const sudahFavorit = kotaTerpilih
+    ? idFavorit.includes(kotaTerpilih.id)
+    : false;
 
   async function pilihKota(kota: HasilGeocoding) {
     setKotaTerpilih(kota);
@@ -167,7 +182,8 @@ export default function HalamanUtama() {
             indeksAQI={kualitasUdara.indeksAQI}
           />
           <Button
-            title="Tambahkan ke Favorit"
+            title={sudahFavorit ? "Sudah di Favorit" : "Tambahkan ke Favorit"}
+            disabled={sudahFavorit}
             onPress={() =>
               router.push({
                 pathname: "/tambah-favorit",
