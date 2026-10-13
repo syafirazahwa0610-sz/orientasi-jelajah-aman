@@ -1,1 +1,4 @@
 
+## Status Data: Cache Segar, Cache Basi, dan First Run Offline
+
+**Cache segar** berarti data tersimpan di perangkat dan umurnya masih di bawah 30 menit, sehingga aplikasi langsung memakainya tanpa memanggil internet. **Cache basi** berarti umur data sudah melewati batas tersebut dan aplikasi gagal mengambil data baru karena offline, sehingga data lama tetap ditampilkan sebagai cadangan. **First run offline** berarti aplikasi dibuka pertama kali tanpa internet dan belum punya cache sama sekali, sehingga tidak ada data yang bisa ditampilkan dan pengguna hanya melihat pesan bahwa belum ada koneksi maupun data tersimpan. Label status ini penting agar pengguna tahu seberapa bisa dipercaya angka cuaca dan AQI yang dilihat, terutama saat data basi yang bisa saja sudah berbeda dari kondisi sebenarnya.
