@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { typeScale, spacing } from "../../constants/styles";
+import { StyleSheet, Text, View } from "react-native";
+import { useTema } from "../../context/ThemeContext";
+import { spacing, typeScale } from "../../constants/styles";
 
 // Ganti nilai-nilai berikut sesuai identitas aplikasi Anda
 const APP_NAME = "Cek Cuaca";
@@ -8,10 +9,11 @@ const APP_VERSION = "1.0.0";
 const APP_AUTHOR = "Syafira";
 
 export default function TentangScreen() {
+  const { colors } = useTema();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text
-        style={styles.title}
+        style={[styles.title, { color: colors.text }]}
         accessibilityLabel={`Halaman Tentang ${APP_NAME}`}
         accessibilityRole="header"
       >
@@ -19,29 +21,29 @@ export default function TentangScreen() {
       </Text>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Nama Aplikasi</Text>
-        <Text style={styles.value}>{APP_NAME}</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>Nama Aplikasi</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{APP_NAME}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Versi</Text>
-        <Text style={styles.value}>{APP_VERSION}</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>Versi</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{APP_VERSION}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Dibuat oleh</Text>
-        <Text style={styles.value}>{APP_AUTHOR}</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>Dibuat oleh</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{APP_AUTHOR}</Text>
       </View>
     </View>
   );
 }
 
+// Warna tidak lagi ditulis di sini, tetapi diambil dari tema saat render
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.besar,
     paddingTop: spacing.besar,
-    backgroundColor: "#fff",
   },
   title: {
     fontSize: typeScale.judul,
@@ -53,7 +55,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typeScale.keterangan,
-    color: "#666",
     marginBottom: spacing.kecil,
   },
   value: {
